@@ -26,6 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "can.h"
 
 /* USER CODE END Includes */
 
@@ -125,13 +126,26 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_messageReceiveTask */
 void messageReceiveTask(void *argument)
 {
-  /* USER CODE BEGIN messageReceiveTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END messageReceiveTask */
+	uint8_t msg_data[8];
+
+	while (1) {
+		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0)) {
+			// there are multiple CAN IDs being passed through the filter, check if the message is the SOC
+			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, msg_data);
+			if (CAN_rx_header.StdId == 0x626) {
+
+				// if the battery SOC is out of range, assume it is at 100% as a safety measure
+				if (msg_data[0] < 0 || msg_data[0] > 100) {
+
+				} else {
+
+				}
+
+			}
+		}
+
+		osDelay(1);
+	}
 }
 
 /* USER CODE BEGIN Header_updateDisplayTask */
