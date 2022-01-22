@@ -2,19 +2,20 @@
 
 /* GLOBAL VARIABLES ---------------------------------------------*/
 
-// Static Values
-uint8_t page_num_val = 1;
+// All the rows of data that will be on the display across multiple pages
+DisplayVar DisplayLayout[] = {
+		{"BATT VOLT",	 "V", 		9, 	3, 	10, 13},
+		{"BATT TEMP",	 "C", 		9, 	3, 	10, 13},
+		{"SPEED",		 "KMH",	 	5, 	3, 	6, 	9},
+		{"SOC",			 "%",		9, 	3, 	10, 13}
+};
 
-// Page 1 Values
-uint8_t speed_val = 255;
-uint8_t cruise_speed_val = 255;
-uint32_t batt_volt_val = 999.9;
-uint32_t batt_curr_val = 999.9;
-uint32_t batt_temp_val = 999.9;
-uint32_t motor_temp_val = 999.9;
-
-// Page 2 Values
-
+// All of the unparsed CAN data, updated whenever new CAN data is received
+DisplayRawData DisplayData[] = {
+		{0x400, 123},
+		{0x500, 1.23},
+		{0x600, -123},
+};
 
 /**
  * A Delay with a value of ~1ms

@@ -1,11 +1,5 @@
 #include "stm32f1xx_hal.h"
 
-/******************************
- ** DECLARES BUS CONNECTIONS **
- ******************************/
-
-/* MACROS ---------------------------------------------*/
-
 // OLD LCD VARS
 #define BYTEPERBITMAP 16
 #define LOOKUP_COLUMN 4
@@ -14,131 +8,53 @@
 #define OFFSET_CAPITAL 65
 #define OFFSET_LOWCASE 97
 
-// MESSAGE ID
-#define BATT_FAULTS 0x622
-#define BATT_VOLTAGE 0x623
-#define BATT_PACK_HEALTH 0x626
-#define BATT_TEMP 0x627
+// NEW LCD VARS
+#define NUM_CAN_IDS 3
 
-#define MDU_STATUS_INFORMATION 0x501
-#define MDU_VELOCITY 0x503
-#define MDU_MOTOR_TEMP 0x50B
-
-// DISPLAY TEMPLATE
-#define ROW0 0
-#define ROW1 5
-#define ROW2 10
-#define ROW3 15
-#define ROW4 20
-#define ROW5 25
-
-/**
- * PAGE TEMPLATE
+/** Helps write float values into the CAN message data array.
+ * 	Instead of converting 32-bit floating point values into 4 byte arrays manually,
+ * 	the union automatically takes care of that conversion. This conversion is necessary
+ * 	since you cannot write float values directly into the CAN message data field. The float
+ * 	value must first be converted to an array of 4 bytes (uint8_t).
  *
- * Values are multiplied by 2 because bitmaps are 16 bits wide instead of 8, hence 16 = (2 * uint_8)
- *
- * VAR_LEN: max length of field + 1 for colon
- * DATA_LEN: max length of the data being displayed (include decimal place and negative sign for vectors, do not include units)
- * XPOS: starting x position for name of data (e.g., 'SPEED: ')
- * DATA_XPOS: starting x position for the value (e.g., "99.9")
- * UNIT_XPOS: starting x position for units (e.g., 'V')
- * YPOS: starting y position for the row (no UNIT_YPOS because it is at the same y position)
- *
- * Default for copying:
- *   #define ?_VAR_LEN (? + 1) * 2
- *   #define ?_DATA_LEN ? * 2
- *   #define ?_XPOS ?
- *   #define ?_DATA_XPOS ?_XPOS + ?_VAR_LEN
- *   #define ?_UNIT_XPOS ?_XPOS + ?_VAR_LEN + ?_DATA_LEN
- *   #define ?_YPOS ROW?
  */
+typedef union FloatBytes {
+	float float_value;			/**< Float value member of the union. */
+	uint8_t bytes[4];			/**< Array of 4 bytes member of union. */
+} FloatBytes;
 
-// STATIC
-#define PAGE_NUM_MAX 2
-#define PAGE_NUM_VAR_LEN 0
-#define PAGE_NUM_DATA_LEN 1 * 2
-#define PAGE_NUM_XPOS 34
-#define PAGE_NUM_DATA_XPOS PAGE_NUM_XPOS + PAGE_NUM_VAR_LEN
-#define PAGE_NUM_UNIT_XPOS PAGE_NUM_XPOS + PAGE_NUM_VAR_LEN + PAGE_NUM_DATA_LEN
-#define PAGE_NUM_YPOS ROW5
+// Unparsed data that is populated immediately when CAN data is received
+typedef struct DisplayRawData
+{
+	const uint8_t can_id;
+	volatile uint8_t raw_data[8];
 
-// PAGE 1
-#define SPEED_ID 0x503
-#define SPEED_VAR_LEN (5 + 1) * 2
-#define SPEED_DATA_LEN 3 * 2
-#define SPEED_XPOS 0
-#define SPEED_DATA_XPOS SPEED_XPOS + SPEED_VAR_LEN
-#define SPEED_UNIT_XPOS SPEED_XPOS + SPEED_VAR_LEN + SPEED_DATA_LEN
-#define SPEED_YPOS ROW0
+} DisplayRawData;
 
-#define CRUISE_SPEED_ID 0x400
-#define CRUISE_SPEED_VAR_LEN (12 + 1) * 2
-#define CRUISE_SPEED_DATA_LEN 3 * 2
-#define CRUISE_SPEED_XPOS 0
-#define CRUISE_SPEED_DATA_XPOS CRUISE_SPEED_XPOS + CRUISE_SPEED_VAR_LEN
-#define CRUISE_SPEED_UNIT_XPOS CRUISE_SPEED_XPOS + CRUISE_SPEED_VAR_LEN + CRUISE_SPEED_DATA_LEN
-#define CRUISE_SPEED_YPOS ROW1
+// Constant values used to create the screen layout row by row
+typedef struct DisplayVar
+{
+	// Example: "BATT TEMP: 55*C"
+	const char* name; 			// TODO: how to do memory managmeent here (this member is not changing)
 
-#define BATT_VOLT_ID 0x623
-#define BATT_VOLT_VAR_LEN (9 + 1) * 2
-#define BATT_VOLT_DATA_LEN 3 * 2
-#define BATT_VOLT_XPOS 0
-#define BATT_VOLT_DATA_XPOS BATT_VOLT_XPOS + BATT_VOLT_VAR_LEN
-#define BATT_VOLT_UNIT_XPOS BATT_VOLT_XPOS + BATT_VOLT_VAR_LEN + BATT_VOLT_DATA_LEN
-#define BATT_VOLT_YPOS ROW2
+	const char* unit;			// Units to be displayed at the end (e.g., KMH, %, C)
 
-#define BATT_CURR_ID 0x624
-#define BATT_CURR_VAR_LEN (9 + 1) * 2
-#define BATT_CURR_DATA_LEN 3 * 2
-#define BATT_CURR_XPOS 0
-#define BATT_CURR_DATA_XPOS BATT_CURR_XPOS + BATT_CURR_VAR_LEN
-#define BATT_CURR_UNIT_XPOS BATT_CURR_XPOS + BATT_CURR_VAR_LEN + BATT_CURR_DATA_LEN
-#define BATT_CURR_YPOS ROW3
+	const uint8_t name_len;		// Characters in the name of the variable being displayed
+								// Does not include colon or trailing spaces
 
-#define BATT_TEMP_ID 0x627
-#define BATT_TEMP_VAR_LEN (9 + 1) * 2
-#define BATT_TEMP_DATA_LEN 3 * 2
-#define BATT_TEMP_XPOS 0
-#define BATT_TEMP_DATA_XPOS BATT_TEMP_XPOS + BATT_TEMP_VAR_LEN
-#define BATT_TEMP_UNIT_XPOS BATT_TEMP_XPOS + BATT_TEMP_VAR_LEN + BATT_TEMP_DATA_LEN
-#define BATT_TEMP_YPOS ROW4
+	const uint8_t data_len;		// Max length of the data
+								// Space from a decimal point or negative sign must be included in the length
 
-#define MOTOR_TEMP_ID 0x50B
-#define MOTOR_TEMP_VAR_LEN (10 + 1) * 2
-#define MOTOR_TEMP_DATA_LEN 3 * 2
-#define MOTOR_TEMP_XPOS 0
-#define MOTOR_TEMP_DATA_XPOS MOTOR_TEMP_XPOS + MOTOR_TEMP_VAR_LEN
-#define MOTOR_TEMP_UNIT_XPOS MOTOR_TEMP_XPOS + MOTOR_TEMP_VAR_LEN + MOTOR_TEMP_DATA_LEN
-#define MOTOR_TEMP_YPOS ROW5
+	const uint8_t data_xpos;	// var_len + 1, colon and space after the variable name
 
-// PAGE 2
-#define _VAR_LEN
-#define _DATA_LEN
-#define _XPOS 0
-#define _UNIT_XPOS (_VAR_LEN + _DATA_LEN + 2) * 2
-#define _YPOS ROW0
+	const uint8_t unit_xpos;	// data_xpos + data_len
 
-#define _VAR_LEN
-#define _DATA_LEN
-#define _XPOS 0
-#define _UNIT_XPOS (_VAR_LEN + _DATA_LEN + 2) * 2
-#define _YPOS ROW0
 
-/* GLOBAL VARIABLES ---------------------------------------------*/
+} DisplayVar;
 
-// Static Values
-extern uint8_t page_num_val;
+extern DisplayVar DisplayLayout[];
 
-// Page 1 Values
-extern uint8_t speed_val;
-extern uint8_t cruise_speed_val;
-extern uint32_t batt_volt_val;
-extern uint32_t batt_curr_val;
-extern uint32_t batt_temp_val;
-extern uint32_t motor_temp_val;
-
-// Page 2 Values
-
+extern DisplayRawData DisplayData[];
 
 
 /* FUNCTION PROTOTYPES ---------------------------------------------*/

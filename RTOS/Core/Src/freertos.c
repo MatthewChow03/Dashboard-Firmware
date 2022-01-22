@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "can.h"
+#include "LCD.h"
 
 /* USER CODE END Includes */
 
@@ -37,6 +38,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define MESSAGE_RECEIVE_TASK_DELAY 1
+#define UPDATE_DISPLAY_TASK_DELAY 1
+#define UPDATE_EVENT_FLAGS_TASK_DELAY 1
 
 /* USER CODE END PD */
 
@@ -63,6 +68,18 @@ const osThreadAttr_t updateDisplay_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for updateEventFlag */
+osThreadId_t updateEventFlagHandle;
+const osThreadAttr_t updateEventFlag_attributes = {
+  .name = "updateEventFlag",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
+/* Definitions for eventFlagsHandle */
+osEventFlagsId_t eventFlagsHandleHandle;
+const osEventFlagsAttr_t eventFlagsHandle_attributes = {
+  .name = "eventFlagsHandle"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -71,6 +88,7 @@ const osThreadAttr_t updateDisplay_attributes = {
 
 void messageReceiveTask(void *argument);
 void updateDisplayTask(void *argument);
+void updateEventFlagsTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -107,9 +125,16 @@ void MX_FREERTOS_Init(void) {
   /* creation of updateDisplay */
   updateDisplayHandle = osThreadNew(updateDisplayTask, NULL, &updateDisplay_attributes);
 
+  /* creation of updateEventFlag */
+  updateEventFlagHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlag_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
+  /* Create the event(s) */
+  /* creation of eventFlagsHandle */
+  eventFlagsHandleHandle = osEventFlagsNew(&eventFlagsHandle_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
@@ -119,7 +144,9 @@ void MX_FREERTOS_Init(void) {
 
 /* USER CODE BEGIN Header_messageReceiveTask */
 /**
-  * @brief  Function implementing the messageReceive thread.
+  * @brief  Reads CAN message ID received and updates the corresponding structure for the global data array.
+  * 		Currently, parses the data for specific IDs that require manipulation of the rx_data.
+  *
   * @param  argument: Not used
   * @retval None
   */
@@ -127,11 +154,34 @@ void MX_FREERTOS_Init(void) {
 void messageReceiveTask(void *argument)
 {
   /* USER CODE BEGIN messageReceiveTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	/* Infinite loop */
+	uint8_t CAN_rx_data[8];
+	while(1)
+	{
+		// Wait for the CAN FIFO0 interrupt to invoke and set the event flag
+
+		// event flag code
+
+		// Check if message is available
+		if (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) != 0)
+		{
+			// Populate CAN header and data variables
+			HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
+
+			// Find the matching data that needs to be updated
+			for(uint8_t i = 0; i < NUM_CAN_IDS; i++)
+			{
+				if(DisplayData[i].can_id == CAN_rx_header.StdId)
+				{
+					DisplayData[i].raw_data = CAN_rx_data;
+				}
+			}
+
+			// Set event flag to run the updateDisplay task
+			event_flags.update_display = 0x01;
+		}
+		osDelay(MESSAGE_RECEIVE_TASK_DELAY);
+	}
   /* USER CODE END messageReceiveTask */
 }
 
@@ -145,12 +195,47 @@ void messageReceiveTask(void *argument)
 void updateDisplayTask(void *argument)
 {
   /* USER CODE BEGIN updateDisplayTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	/* Infinite loop */
+	while(1)
+	{
+		// Wait for the CAN FIFO0 interrupt to invoke and set the event flag
+
+		// event flag code
+
+		// Update display
+
+		// new function from LCD.c
+
+		osDelay(UPDATE_DISPLAY_TASK_DELAY);
+	}
   /* USER CODE END updateDisplayTask */
+}
+
+/* USER CODE BEGIN Header_updateEventFlagsTask */
+/**
+* @brief Function implementing the updateEventFlag thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_updateEventFlagsTask */
+void updateEventFlagsTask(void *argument)
+{
+	/* USER CODE BEGIN updateEventFlagsTask */
+	/* Infinite loop */
+	while(1)
+	{
+		if (event_flags.message_receive)
+		{
+			osEventFlagsSet(, )
+		}
+		else if (event_flags.update_display)
+		{
+			osEventFlagsSet(, )
+		}
+
+		osDelay(UPDATE_EVENT_FLAGS_TASK_DELAY);
+	}
+	/* USER CODE END updateEventFlagsTask */
 }
 
 /* Private application code --------------------------------------------------*/

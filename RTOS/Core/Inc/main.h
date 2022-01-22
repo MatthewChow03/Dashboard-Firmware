@@ -43,6 +43,17 @@ extern CAN_FilterTypeDef CAN_filter1;
 
 extern CAN_RxHeaderTypeDef CAN_rx_header;
 
+typedef struct EventFlags
+{
+	volatile uint8_t message_receive;		// Set in the CAN interrupts callback function
+											// when a message is received
+
+	volatile uint8_t update_display;		// Set after a message is received when the display needs
+											// to add update with the new data
+} EventFlags;
+
+extern struct EventFlags event_flags;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

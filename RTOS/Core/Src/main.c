@@ -54,6 +54,8 @@ CAN_FilterTypeDef CAN_filter1;
 // CAN receiving
 CAN_RxHeaderTypeDef CAN_rx_header;
 
+struct EventFlags event_flags;			// Event flags set as either 1 or 0
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,6 +67,12 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	// Set message flag to 1 so that the update display task can execute
+	event_flags.message_receive = 0x01;
+}
 
 /* USER CODE END 0 */
 
