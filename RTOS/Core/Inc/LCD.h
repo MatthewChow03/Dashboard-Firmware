@@ -10,6 +10,8 @@
 
 // NEW LCD VARS
 #define NUM_CAN_IDS 3
+#define NUM_ROWS_PAGE1 4
+#define NUM_ROWS_PAGE2 4
 
 /** Helps write float values into the CAN message data array.
  * 	Instead of converting 32-bit floating point values into 4 byte arrays manually,
@@ -49,12 +51,15 @@ typedef struct DisplayVar
 
 	const uint8_t unit_xpos;	// data_xpos + data_len
 
+	const uint8_t ypos;			// Row height, starting from the top as 0
+
 
 } DisplayVar;
 
 
 extern uint8_t current_page;
-extern DisplayVar DisplayLayout[];
+extern DisplayVar DisplayLayoutPage1[];
+extern DisplayVar DisplayLayoutPage2[];
 extern DisplayRawData DisplayData[];
 
 
@@ -122,11 +127,10 @@ void InitialiseLCDPins(void);
  * Erases and revalues a single value field on a screen
  * @Param integerValue: The integer value of the parameter(Between -999 to 999)
  * @Param decValue: The decimal component of the parameter
- * @Param decOn: 1 to display decimals, 0 for no decimals
  *  @Param x: The x value of the parameter on the screen
  * @Param y: The y value of the parameter on the screen
  */
-void UpdateScreenParameter(int32_t integerValue, uint8_t decValue, uint8_t decOn, uint8_t x, uint8_t y);
+void UpdateScreenParameter(int32_t integerValue, uint8_t decValue, uint8_t x, uint8_t y);
 /**
  * Periodically called to change the value of the Charge or Speed display bar
  * @Param num: The number to be represented
@@ -148,12 +152,13 @@ void OutputString(char Str[], uint8_t starting_x, uint8_t starting_y);
  * The output can take any value from '-999.9' to ' 999.9'
  * @Param num: The integer portion of the number to be displayed
  * @Param dec: The decimal portion of the number to be displayed
- * @Param decOn: Determines whether or not to show decimal value
+ *				NOTE: the decimal will be off if the value if -1,
+ *					  otherwise, the decimal will be on
  * @Param x: x-coordinate to write the character
  * @Param y: y-coordinate to write the character
  * Returns: nothing
  */
-void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t decOn, uint8_t x, uint8_t y);
+void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y);
 /**
  * A Delay with a value of ~1us
  * @Param counts: Number of microseconds

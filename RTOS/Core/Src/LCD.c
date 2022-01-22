@@ -4,12 +4,19 @@
 
 uint8_t current_page = 1;
 
-// All the rows of data that will be on the display across multiple pages
-DisplayVar DisplayLayout[] = {
-		{"BATT VOLT",	 "V", 		9, 	3, 	10, 13},
-		{"BATT TEMP",	 "C", 		9, 	3, 	10, 13},
-		{"SPEED",		 "KMH",	 	5, 	3, 	6, 	9},
-		{"SOC",			 "%",		9, 	3, 	10, 13}
+// All the rows of data that will be on a single page
+DisplayVar DisplayLayoutPage1[] = {
+		{"BATT VOLT",	 "V", 		9, 	3, 	10, 13,	0},
+		{"BATT TEMP",	 "C", 		9, 	3, 	10, 13,	1},
+		{"SPEED",		 "KMH",	 	5, 	3, 	6, 	9,	2},
+		{"SOC",			 "%",		9, 	3, 	10, 13,	3}
+};
+
+DisplayVar DisplayLayoutPage2[] = {
+		{"BATT VOLT",	 "V", 		9, 	3, 	10, 13,	0},
+		{"BATT TEMP",	 "C", 		9, 	3, 	10, 13,	1},
+		{"SPEED",		 "KMH",	 	5, 	3, 	6, 	9,	2},
+		{"SOC",			 "%",		9, 	3, 	10, 13,	3}
 };
 
 // All of the unparsed CAN data, updated whenever new CAN data is received
@@ -248,12 +255,13 @@ void OutputString(char Str[], uint8_t starting_x, uint8_t starting_y)
  * The output can take any value from '-999.9' to ' 999.9'
  * @Param num: The integer portion of the number to be displayed
  * @Param dec: The decimal portion of the number to be displayed
- * @Param decOn: 1 to display decimals, 0 for no decimals
+ *				NOTE: the decimal will be off if the value if -1,
+ *					  otherwise, the decimal will be on
  * @Param x: x-coordinate to write the character
  * @Param y: y-coordinate to write the character
  * Returns: nothing
  */
-void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t decOn, uint8_t x, uint8_t y)
+void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t x, uint8_t y)
 {
 	uint8_t i;
     char str[5] = {' ',' ',' ',' ','\0'};
@@ -283,7 +291,7 @@ void OutputPaddedInteger(int32_t num, uint8_t dec, uint8_t decOn, uint8_t x, uin
 		
     OutputString(str, x, y);
     
-    if (decOn == 1)
+    if (dec != -1)
     {
 		//Output 1 decimal place
 		OutputString(".", x + 12, y);
@@ -329,68 +337,48 @@ void DisplayScreen(void)
 {
     ClearScreen();
 
-	// Display all data that should be on the page. Insert current data for values
+    // Different code for each page allows for different designs
 	switch (current_page)
 	{
 	  case (1):
 
-		  /** Temporary template for row layouts
-		  OutputString(":", _XPOS, _YPOS);
-		  OutputPaddedInteger(_val, 0, _DATA_XPOS, _YPOS);
-		  OutputString("", _UNIT_XPOS, _YPOS);
-		   */
+		  for (uint8_t i = 0; i < NUM_ROWS_PAGE1; i++)
+		  {
+			  OutputString( DisplayLayoutPage1[i].name,
+					  	  	0,
+						    DisplayLayoutPage1[i].ypos );
 
-		  // ROW0: SPEED
-		  OutputString("SPEED:", SPEED_XPOS, SPEED_YPOS);
-		  OutputPaddedInteger(speed_val, 0, 0, SPEED_DATA_XPOS, SPEED_YPOS);
-		  OutputString("KMH", SPEED_UNIT_XPOS, SPEED_YPOS);
+			  // TODO: variable from parsing algorithm as the first 3 parameters
+			  OutputPaddedInteger( 0,
+					  	  	  	  -1,
+								  DisplayLayoutPage1[i].data_xpos,
+								  DisplayLayoutPage1[i].ypos );
 
-		  // ROW1: CRUISE_SPEED
-		  OutputString("CRUISE SPEED:", CRUISE_SPEED_XPOS, CRUISE_SPEED_YPOS);
-		  OutputPaddedInteger(cruise_speed_val, 0, 0, CRUISE_SPEED_DATA_XPOS, CRUISE_SPEED_YPOS);
-		  OutputString("KMH", CRUISE_SPEED_UNIT_XPOS, CRUISE_SPEED_YPOS);
-
-		  // ROW2: BATT_VOLT
-		  OutputString("BATT VOLT:", BATT_VOLT_XPOS, BATT_VOLT_YPOS);
-		  OutputPaddedInteger(batt_volt_val, 0, 1, BATT_VOLT_DATA_XPOS, BATT_VOLT_YPOS);
-		  OutputString("V", BATT_VOLT_UNIT_XPOS, BATT_VOLT_YPOS);
-
-		  // ROW3: BATT_CURR
-		  OutputString("BATT CURR:", BATT_CURR_XPOS, BATT_CURR_YPOS);
-		  OutputPaddedInteger(batt_curr_val, 0, 1, BATT_CURR_DATA_XPOS, BATT_CURR_YPOS);
-		  OutputString("A", BATT_CURR_UNIT_XPOS, BATT_CURR_YPOS);
-
-		  // ROW4: BATT_TEMP
-		  OutputString("BATT TEMP:", BATT_TEMP_XPOS, BATT_TEMP_YPOS);
-		  OutputPaddedInteger(batt_temp_val, 0, 1, BATT_TEMP_DATA_XPOS, BATT_TEMP_YPOS);
-		  OutputString("C", BATT_TEMP_UNIT_XPOS, BATT_TEMP_YPOS);
-
-		  // ROW5: MOTOR_TEMP
-		  OutputString("MOTOR TEMP:", MOTOR_TEMP_XPOS, MOTOR_TEMP_YPOS);
-		  OutputPaddedInteger(motor_temp_val, 0, 1, MOTOR_TEMP_DATA_XPOS, MOTOR_TEMP_YPOS);
-		  OutputString("C", MOTOR_TEMP_UNIT_XPOS, MOTOR_TEMP_YPOS);
+			  OutputString( DisplayLayoutPage1[i].unit,
+					  	  	DisplayLayoutPage1[i].unit_xpos,
+							DisplayLayoutPage1[i].ypos );
+		  }
 
 		  break;
 
 	  case (2):
 
-		  // ROW0:
+		for (uint8_t i = 0; i < NUM_ROWS_PAGE2; i++)
+				  {
+					  OutputString( DisplayLayoutPage2[i].name,
+							  	  	0,
+								    DisplayLayoutPage2[i].ypos );
 
+					  // TODO: variable from parsing algorithm as the first 3 parameters
+					  OutputPaddedInteger( 0,
+							  	  	  	  -1,
+										  DisplayLayoutPage2[i].data_xpos,
+										  DisplayLayoutPage2[i].ypos );
 
-		  // ROW1:
-
-
-		  // ROW2:
-
-
-		  // ROW3:
-
-
-		  // ROW4:
-
-
-		  // ROW5:
-
+					  OutputString( DisplayLayoutPage2[i].unit,
+							  	  	DisplayLayoutPage2[i].unit_xpos,
+									DisplayLayoutPage2[i].ypos );
+				  }
 
 		  break;
 	
@@ -409,17 +397,16 @@ void DisplayScreen(void)
  * Erases and revalues a single value field on a screen
  * @Param integerValue: The integer value of the parameter(Between -999 to 999)
  * @Param decValue: The decimal component of the parameter
- * @Param decOn: 1 to display decimals, 0 for no decimals
  * @Param x: The x value of the parameter on the screen
  * @Param y: The y value of the parameter on the screen
  */
-void UpdateScreenParameter(int32_t integerValue, uint8_t decValue, uint8_t decOn, uint8_t x, uint8_t y)
+void UpdateScreenParameter(int32_t integerValue, uint8_t decValue, uint8_t x, uint8_t y)
 {
 	//Clear a 6 x 2 rectangle to erase the previous number
 	OutputString("     ", x, y);
 	
 	//Insert the new number
-	OutputPaddedInteger(integerValue, decValue, decOn, x, y);
+	OutputPaddedInteger(integerValue, decValue, x, y);
 }
 
 /**
