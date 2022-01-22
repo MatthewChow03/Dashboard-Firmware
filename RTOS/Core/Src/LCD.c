@@ -2,6 +2,8 @@
 
 /* GLOBAL VARIABLES ---------------------------------------------*/
 
+uint8_t current_page = 1;
+
 // All the rows of data that will be on the display across multiple pages
 DisplayVar DisplayLayout[] = {
 		{"BATT VOLT",	 "V", 		9, 	3, 	10, 13},
@@ -16,6 +18,9 @@ DisplayRawData DisplayData[] = {
 		{0x500, 1.23},
 		{0x600, -123},
 };
+
+
+/* FUNCTION DEFINITIONS ---------------------------------------------*/
 
 /**
  * A Delay with a value of ~1ms
@@ -325,7 +330,7 @@ void DisplayScreen(void)
     ClearScreen();
 
 	// Display all data that should be on the page. Insert current data for values
-	switch (page_num_val)
+	switch (current_page)
 	{
 	  case (1):
 

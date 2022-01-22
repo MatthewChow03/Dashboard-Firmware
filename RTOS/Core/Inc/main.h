@@ -50,6 +50,13 @@ typedef struct EventFlags
 
 	volatile uint8_t update_display;		// Set after a message is received when the display needs
 											// to add update with the new data
+
+	volatile uint8_t page_change;			// Set when the change page button is pressed
+											// The button pressed is recognized via a CAN message
+
+	volatile uint8_t page_timeout;			// Set after the user has been on a page for too long
+											// Returns to page 1
+
 } EventFlags;
 
 extern struct EventFlags event_flags;

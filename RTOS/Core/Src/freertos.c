@@ -42,6 +42,8 @@
 #define MESSAGE_RECEIVE_TASK_DELAY 1
 #define UPDATE_DISPLAY_TASK_DELAY 1
 #define UPDATE_EVENT_FLAGS_TASK_DELAY 1
+#define PAGE_CHANGE_TASK_DELAY 1
+#define PAGE_TIMEOUT_TASK_DELAY 1
 
 /* USER CODE END PD */
 
@@ -53,32 +55,63 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
-/* USER CODE END Variables */
-/* Definitions for messageReceive */
+/**
+ * The dashboard can only be doing one of these actions at a time.
+ * States are used to set the state event flag which is used in starting tasks.
+ */
+enum DisplayStates {
+	IDLE = (uint32_t) 0x0000,					// Default state when no task needs to be executed
+
+	MESSAGE_RECEIVE = (uint32_t) 0x0001,		// Data has been received, store the data
+
+	UPDATE_DISPLAY = (uint32_t) 0x0002,			// After data has been stored, update the display
+												// with the new data
+
+	PAGE_CHANGE = (uint32_t) 0x0004,			// Button has been pressed, change page
+
+	PAGE_TIMEOUT = (uint32_t) 0x0008,			// User has been on a page other than page 1
+												// for a long time, go back to page 1
+
+} state;
+
 osThreadId_t messageReceiveHandle;
 const osThreadAttr_t messageReceive_attributes = {
   .name = "messageReceive",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for updateDisplay */
+
 osThreadId_t updateDisplayHandle;
 const osThreadAttr_t updateDisplay_attributes = {
   .name = "updateDisplay",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for updateEventFlag */
+
 osThreadId_t updateEventFlagHandle;
 const osThreadAttr_t updateEventFlag_attributes = {
   .name = "updateEventFlag",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
-/* Definitions for eventFlagsHandle */
-osEventFlagsId_t eventFlagsHandleHandle;
-const osEventFlagsAttr_t eventFlagsHandle_attributes = {
-  .name = "eventFlagsHandle"
+
+osThreadId_t pageChangeHandle;
+const osThreadAttr_t pageChange_attributes = {
+  .name = "pageChange",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+
+osThreadId_t pageTimeoutHandle;
+const osThreadAttr_t pageTimeout_attributes = {
+  .name = "pageTimeout",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+
+osEventFlagsId_t stateEventFlagsHandleHandle;
+const osEventFlagsAttr_t stateEventFlagsHandle_attributes = {
+  .name = "stateEventFlagsHandle"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,6 +122,8 @@ const osEventFlagsAttr_t eventFlagsHandle_attributes = {
 void messageReceiveTask(void *argument);
 void updateDisplayTask(void *argument);
 void updateEventFlagsTask(void *argument);
+void pageChangeTask(void *argument);
+void pageTimeoutTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -98,47 +133,18 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
-  /* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
-
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
-
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
-
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
-
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
-
-  /* Create the thread(s) */
-  /* creation of messageReceive */
   messageReceiveHandle = osThreadNew(messageReceiveTask, NULL, &messageReceive_attributes);
 
-  /* creation of updateDisplay */
   updateDisplayHandle = osThreadNew(updateDisplayTask, NULL, &updateDisplay_attributes);
 
-  /* creation of updateEventFlag */
   updateEventFlagHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlag_attributes);
 
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
+  pageChangeHandle = osThreadNew(pageChangeTask, NULL, &pageChange_attributes);
 
-  /* Create the event(s) */
-  /* creation of eventFlagsHandle */
-  eventFlagsHandleHandle = osEventFlagsNew(&eventFlagsHandle_attributes);
+  pageTimeoutHandle = osThreadNew(pageTimeoutTask, NULL, &pageTimeout_attributes);
 
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
+  stateEventFlagsHandleHandle = osEventFlagsNew(&stateEventFlagsHandle_attributes);
 
 }
 
@@ -146,21 +152,17 @@ void MX_FREERTOS_Init(void) {
 /**
   * @brief  Reads CAN message ID received and updates the corresponding structure for the global data array.
   * 		Currently, parses the data for specific IDs that require manipulation of the rx_data.
-  *
-  * @param  argument: Not used
-  * @retval None
   */
 /* USER CODE END Header_messageReceiveTask */
 void messageReceiveTask(void *argument)
 {
   /* USER CODE BEGIN messageReceiveTask */
-	/* Infinite loop */
 	uint8_t CAN_rx_data[8];
 	while(1)
 	{
 		// Wait for the CAN FIFO0 interrupt to invoke and set the event flag
 
-		// event flag code
+		osEventFlagsWait(stateEventFlagsHandle, MESSAGE_RECEIVE, osFlagsWaitAll, osWaitForever);
 
 		// Check if message is available
 		if (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) != 0)
@@ -179,6 +181,9 @@ void messageReceiveTask(void *argument)
 
 			// Set event flag to run the updateDisplay task
 			event_flags.update_display = 0x01;
+
+			// Reset the event flag after the task has finished
+			event_flags.message_receive - 0x00;
 		}
 		osDelay(MESSAGE_RECEIVE_TASK_DELAY);
 	}
@@ -187,24 +192,22 @@ void messageReceiveTask(void *argument)
 
 /* USER CODE BEGIN Header_updateDisplayTask */
 /**
-* @brief Function implementing the updateDisplay thread.
-* @param argument: Not used
-* @retval None
+* @brief 	Updates the display. Only called after new data has been received
 */
 /* USER CODE END Header_updateDisplayTask */
 void updateDisplayTask(void *argument)
 {
   /* USER CODE BEGIN updateDisplayTask */
-	/* Infinite loop */
 	while(1)
 	{
 		// Wait for the CAN FIFO0 interrupt to invoke and set the event flag
 
-		// event flag code
+		osEventFlagsWait(stateEventFlagsHandle, UPDATE_DISPLAY, osFlagsWaitAll, osWaitForever);
 
-		// Update display
+		DisplayScreen();
 
-		// new function from LCD.c
+		// Reset the event flag after the task has finished
+		event_flags.update_display = 0x00;
 
 		osDelay(UPDATE_DISPLAY_TASK_DELAY);
 	}
@@ -213,34 +216,69 @@ void updateDisplayTask(void *argument)
 
 /* USER CODE BEGIN Header_updateEventFlagsTask */
 /**
-* @brief Function implementing the updateEventFlag thread.
-* @param argument: Not used
-* @retval None
+* @brief 	Sets the display state event flag based on the event_flags value
 */
 /* USER CODE END Header_updateEventFlagsTask */
 void updateEventFlagsTask(void *argument)
 {
-	/* USER CODE BEGIN updateEventFlagsTask */
-	/* Infinite loop */
+  /* USER CODE BEGIN updateEventFlagsTask */
 	while(1)
 	{
-		if (event_flags.message_receive)
-		{
-			osEventFlagsSet(, )
+		if (event_flags.message_receive) {
+			state = MESSAGE_RECEIVE;
 		}
-		else if (event_flags.update_display)
-		{
-			osEventFlagsSet(, )
+		else if (event_flags.update_display) {
+			state = UPDATE_DISPLAY;
+		}
+		else if (event_flags.page_change) {
+			state = PAGE_CHANGE;
+		}
+		else if (event_flags.page_timeout) {
+			state = PAGE_TIMEOUT;
+		}
+		else {
+			state = IDLE;
 		}
 
-		osDelay(UPDATE_EVENT_FLAGS_TASK_DELAY);
+		osEventFlagsSet(stateEventFlagsHandleHandle, state);
+
+		osDelay(UPDATE_EVENT_FLAG_DELAY);
 	}
-	/* USER CODE END updateEventFlagsTask */
+  /* USER CODE END updateEventFlagsTask */
 }
 
-/* Private application code --------------------------------------------------*/
-/* USER CODE BEGIN Application */
+/* USER CODE BEGIN Header_pageChangeTask */
+/**
+* @brief 	Changes the page when the button press CAN message is received
+*/
+/* USER CODE END Header_pageChangeTask */
+void pageChangeTask(void *argument)
+{
+  /* USER CODE BEGIN pageChangeTask */
+	while(1)
+	{
+		osEventFlagsWait(stateEventFlagsHandle, PAGE_CHANGE, osFlagsWaitAll, osWaitForever);
+
+		osDelay(PAGE_CHANGE_TASK_DELAY);
+	}
+  /* USER CODE END pageChangeTask */
+}
+
+/* USER CODE BEGIN Header_pageTimeoutTask */
+/**
+* @brief 	Returns to page 1 after a set amount of time spent on any other page
+*/
+/* USER CODE END Header_pageTimeoutTask */
+void pageTimeoutTask(void *argument)
+{
+	/* USER CODE BEGIN pageTimeoutTask */
+	while(1)
+	{
+		osEventFlagsWait(stateEventFlagsHandle, PAGE_TIMEOUT, osFlagsWaitAll, osWaitForever);
+
+		osDelay(PAGE_TIMEOUT_TASK_DELAY);
+	}
+	/* USER CODE END pageTimeoutTask */
+}
 
 /* USER CODE END Application */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -52,8 +52,9 @@ typedef struct DisplayVar
 
 } DisplayVar;
 
-extern DisplayVar DisplayLayout[];
 
+extern uint8_t current_page;
+extern DisplayVar DisplayLayout[];
 extern DisplayRawData DisplayData[];
 
 
