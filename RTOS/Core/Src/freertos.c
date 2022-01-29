@@ -71,47 +71,48 @@ enum DisplayStates {
 
 	PAGE_TIMEOUT = (uint32_t) 0x0008,			// User has been on a page other than page 1
 												// for a long time, go back to page 1
-
 } state;
 
+/* USER CODE END Variables */
+/* Definitions for messageReceive */
 osThreadId_t messageReceiveHandle;
 const osThreadAttr_t messageReceive_attributes = {
   .name = "messageReceive",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityHigh,
+  .priority = (osPriority_t) osPriorityNormal,
 };
-
+/* Definitions for updateDisplay */
 osThreadId_t updateDisplayHandle;
 const osThreadAttr_t updateDisplay_attributes = {
   .name = "updateDisplay",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityLow,
 };
-
+/* Definitions for updateEventFlag */
 osThreadId_t updateEventFlagHandle;
 const osThreadAttr_t updateEventFlag_attributes = {
   .name = "updateEventFlag",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
-
+/* Definitions for pageChange */
 osThreadId_t pageChangeHandle;
 const osThreadAttr_t pageChange_attributes = {
   .name = "pageChange",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-
+/* Definitions for pageTimeout */
 osThreadId_t pageTimeoutHandle;
 const osThreadAttr_t pageTimeout_attributes = {
   .name = "pageTimeout",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-
-osEventFlagsId_t stateEventFlagsHandleHandle;
-const osEventFlagsAttr_t stateEventFlagsHandle_attributes = {
-  .name = "stateEventFlagsHandle"
+/* Definitions for stateEventFlags */
+osEventFlagsId_t stateEventFlagsHandle;
+const osEventFlagsAttr_t stateEventFlags_attributes = {
+  .name = "stateEventFlags"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -133,18 +134,53 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   * @retval None
   */
 void MX_FREERTOS_Init(void) {
+  /* USER CODE BEGIN Init */
 
+  /* USER CODE END Init */
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of messageReceive */
   messageReceiveHandle = osThreadNew(messageReceiveTask, NULL, &messageReceive_attributes);
 
+  /* creation of updateDisplay */
   updateDisplayHandle = osThreadNew(updateDisplayTask, NULL, &updateDisplay_attributes);
 
+  /* creation of updateEventFlag */
   updateEventFlagHandle = osThreadNew(updateEventFlagsTask, NULL, &updateEventFlag_attributes);
 
+  /* creation of pageChange */
   pageChangeHandle = osThreadNew(pageChangeTask, NULL, &pageChange_attributes);
 
+  /* creation of pageTimeout */
   pageTimeoutHandle = osThreadNew(pageTimeoutTask, NULL, &pageTimeout_attributes);
 
-  stateEventFlagsHandleHandle = osEventFlagsNew(&stateEventFlagsHandle_attributes);
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Create the event(s) */
+  /* creation of stateEventFlags */
+  stateEventFlagsHandle = osEventFlagsNew(&stateEventFlags_attributes);
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
 
 }
 
@@ -165,17 +201,20 @@ void messageReceiveTask(void *argument)
 		osEventFlagsWait(stateEventFlagsHandle, MESSAGE_RECEIVE, osFlagsWaitAll, osWaitForever);
 
 		// Check if message is available
-		if (HAL_CAN_GetRxFifoFillLevel(hcan, CAN_RX_FIFO0) != 0)
+		if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) != 0)
 		{
 			// Populate CAN header and data variables
-			HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
+			HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &CAN_rx_header, CAN_rx_data);
 
 			// Find the matching data that needs to be updated
-			for(uint8_t i = 0; i < NUM_CAN_IDS; i++)
+			for(uint8_t struct_index = 0; struct_index < NUM_CAN_IDS; struct_index++)
 			{
-				if(DisplayData[i].can_id == CAN_rx_header.StdId)
+				if(DisplayData[struct_index].can_id == CAN_rx_header.StdId)
 				{
-					DisplayData[i].raw_data = CAN_rx_data;
+					for(int data_index = 0; data_index < 8; data_index++)
+					{
+						DisplayData[struct_index].raw_data[data_index] = CAN_rx_data[data_index];
+					}
 				}
 			}
 
@@ -240,16 +279,18 @@ void updateEventFlagsTask(void *argument)
 			state = IDLE;
 		}
 
-		osEventFlagsSet(stateEventFlagsHandleHandle, state);
+		osEventFlagsSet(stateEventFlagsHandle, state);
 
-		osDelay(UPDATE_EVENT_FLAG_DELAY);
+		osDelay(UPDATE_EVENT_FLAGS_TASK_DELAY);
 	}
   /* USER CODE END updateEventFlagsTask */
 }
 
 /* USER CODE BEGIN Header_pageChangeTask */
 /**
-* @brief 	Changes the page when the button press CAN message is received
+* @brief Function implementing the pageChange thread.
+* @param argument: Not used
+* @retval None
 */
 /* USER CODE END Header_pageChangeTask */
 void pageChangeTask(void *argument)
@@ -266,19 +307,26 @@ void pageChangeTask(void *argument)
 
 /* USER CODE BEGIN Header_pageTimeoutTask */
 /**
-* @brief 	Returns to page 1 after a set amount of time spent on any other page
+* @brief Function implementing the pageTimeout thread.
+* @param argument: Not used
+* @retval None
 */
 /* USER CODE END Header_pageTimeoutTask */
 void pageTimeoutTask(void *argument)
 {
-	/* USER CODE BEGIN pageTimeoutTask */
+  /* USER CODE BEGIN pageTimeoutTask */
 	while(1)
 	{
 		osEventFlagsWait(stateEventFlagsHandle, PAGE_TIMEOUT, osFlagsWaitAll, osWaitForever);
 
 		osDelay(PAGE_TIMEOUT_TASK_DELAY);
 	}
-	/* USER CODE END pageTimeoutTask */
+  /* USER CODE END pageTimeoutTask */
 }
 
+/* Private application code --------------------------------------------------*/
+/* USER CODE BEGIN Application */
+
 /* USER CODE END Application */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

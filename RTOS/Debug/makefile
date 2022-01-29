@@ -65,8 +65,8 @@ all: main-build
 main-build: DID_RTOS.elf secondary-outputs
 
 # Tool invocations
-DID_RTOS.elf: $(OBJS) $(USER_OBJS) C:\ST\STM32CubeIDE\workspace_1.7.0\DID_RTOS\STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "DID_RTOS.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\ST\STM32CubeIDE\workspace_1.7.0\DID_RTOS\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DID_RTOS.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+DID_RTOS.elf: $(OBJS) $(USER_OBJS) C:\ST\STM32CubeIDE\workspace_1.7.0\Dashboard-Firmware\RTOS\STM32F103RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "DID_RTOS.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\ST\STM32CubeIDE\workspace_1.7.0\Dashboard-Firmware\RTOS\STM32F103RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DID_RTOS.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

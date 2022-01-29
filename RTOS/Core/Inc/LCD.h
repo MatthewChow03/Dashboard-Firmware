@@ -29,7 +29,7 @@ typedef union FloatBytes {
 typedef struct DisplayRawData
 {
 	const uint8_t can_id;
-	volatile uint8_t raw_data[8];
+	volatile int8_t raw_data[8];
 
 } DisplayRawData;
 

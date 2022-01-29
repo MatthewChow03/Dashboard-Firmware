@@ -384,13 +384,6 @@ void DisplayScreen(void)
 	
 	}
 
-	// Display page number (example output: '1/2')
-	OutputString(" ", PAGE_NUM_UNIT_XPOS - 1, PAGE_NUM_YPOS);
-	OutputPaddedInteger(page_num_val, 0, 0, PAGE_NUM_XPOS, PAGE_NUM_YPOS);
-	OutputString("/", PAGE_NUM_UNIT_XPOS, PAGE_NUM_YPOS);
-	OutputPaddedInteger(PAGE_NUM_MAX, 0, 0, PAGE_NUM_UNIT_XPOS + 2, PAGE_NUM_YPOS);
-
-	
 }
 
 /**
