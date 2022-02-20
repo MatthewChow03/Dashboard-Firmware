@@ -1,0 +1,16 @@
+LCD.c:138:6:Delay	24	static
+LCD.c:154:6:MicrosecondDelay	24	static
+LCD.c:169:6:MoveCursor	24	static
+LCD.c:194:6:ClearScreen	16	static
+LCD.c:212:6:SaveCharacterToRAM	24	static
+LCD.c:226:6:CharacterBitMaps	272	static
+LCD.c:272:6:OutputString	24	static
+LCD.c:372:6:OutputPaddedInteger	32	static
+LCD.c:414:6:SetBar	24	static
+LCD.c:434:6:DisplayScreen	32	static
+LCD.c:569:6:UpdateScreenParameter	16	static
+LCD.c:583:6:WriteByteToDataBus	16	static
+LCD.c:593:6:TransmitCommand	16	static
+LCD.c:607:6:TransmitCommandParameter	16	static
+LCD.c:619:6:InitialiseLCDPins	4	static
+LCD.c:643:6:ScreenSetup	8	static

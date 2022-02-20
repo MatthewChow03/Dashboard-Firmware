@@ -1,0 +1,6 @@
+freertos.c:121:6:MX_FREERTOS_Init	8	static
+freertos.c:147:6:messageReceiveTask	32	static
+freertos.c:186:6:updateDisplayTask	16	static
+freertos.c:209:6:updateEventFlagsTask	16	static
+freertos.c:237:6:pageChangeTask	16	static
+freertos.c:253:6:pageTimeoutTask	16	static
