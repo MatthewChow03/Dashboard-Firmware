@@ -13,7 +13,7 @@ The MCB is in charge of the encoder (pedal) input, regenerative braking inputs, 
 
 ### Array Monitor Board (AMB)
 
-The function of the AMB is to measure various values from the solar arrays including voltage, current, and temperature and output it onto the CAN bus. This is vital information for the tleemetry and information systems on the car.
+The function of the AMB is to measure various values from the solar arrays including voltage, current, and temperature and output it onto the CAN bus. This is vital information for the telemetry  and information systems on the car.
 
 ### Telemetry Board (TEL)
 
