@@ -1,0 +1,20 @@
+GENERAL
+The difference is that the code that stores and populates data is put in the interrupt callback essentially
+- reasoning: it will parse through 8 CAN IDs to find which one has been received. then it will populate 8 bytes of data
+             this should not take much time at all and it shoud not hold anything back
+
+- the update display is occuring forever in the main loop (whenever the interrupt callback is not happening)
+- reasoning: the DisplayScreen() function interacts with the LCD directly by using like 5 nested functions, this may be blocking, so this does not go in the interrupt
+
+
+TEST PLANS
+
+Initial CAN recieve testing: check that CAN messages are being received properly. This can be done by checking for the next page button press. If the page is switched, then turn on an LED. From there, check that next page button presses are not being skipped/missed by the timing of the polling algorithm.
+
+Intermediate CAN recieve testing: check that values are being populated correctly by the main algorithm and DisplayScreen() function. One way to test this would be to check the SOC percentage value. This could be done with a debugger that watches a variable representing the percentage. It could also be done with 5 LEDs on a breadboard that change based on the charge (i.e, LEDs represent 20% increments of charge).
+
+Display testing: without CANbus integration, check the formatting of the LCD display visually with dummy data. Edit the page layout based on what the driver needs prioritized. Note that this was a major roadblock previously because of broken cables.
+
+Display + CAN testing: create a test node that changes the values of page 1 and page 2 parameters. Watch as the LCD changes values on page 1 and 2 to see if everything is updating correctly.
+
+Further testing: think about edge cases to test and perform a more rigorous analysis of what could go wrong.
