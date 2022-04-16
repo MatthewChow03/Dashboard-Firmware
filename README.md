@@ -11,6 +11,8 @@ The MCB is in charge of the encoder (pedal) input, regenerative braking inputs, 
 
 ### Driver Information Display (DID)
 
+The DID parses the messages on the CAN bus and displays the relevant information to the driver via the dashboard LCD.
+
 ### Array Monitor Board (AMB)
 
 The function of the AMB is to measure various values from the solar arrays including voltage, current, and temperature and output it onto the CAN bus. This is vital information for the telemetry  and information systems on the car.
@@ -21,10 +23,18 @@ The telemetry system is composed of a cellular network that uses HTTP requests t
 
 ## Dashboard in Depth (coming soon...)
 
+### High Level Algorithm
 
+### Physical Setup
 
-- How it works (alogirthm)
-- Electronics and physical setup
-- Improvements from V2
-- Different programs and why they worked/didn't work
-- Future iterations and suggestions (off the shelf, tedious)
+### Improvements from Firmware V2
+
+### Iterations
+
+#### Polling
+
+#### RTOS
+
+#### Interrupts
+
+### Future
