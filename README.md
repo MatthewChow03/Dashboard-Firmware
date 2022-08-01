@@ -20,25 +20,3 @@ The function of the AMB is to measure various values from the solar arrays inclu
 ### Telemetry Board (TEL)
 
 The telemetry system is composed of a cellular network that uses HTTP requests to interact with a web server in addition to a radio system that communicates with a local PC (for example, a laptop in a team vehicle that trails the race car). The TEL transmits data from the CAN bus over the cellular/radio systems. It also transmits GPS data for location and inertia measurement unit data (IMU) for instantaneous acceleration and 3 dimensional momentum.
-
-## Dashboard in Depth
-
-### High Level Algorithm
-
-### Physical Setup
-
-Wiring
-
-### Improvements from Firmware V2
-
-- Bare metal code in the main files is reduced by implementing the 
-
-### Iterations
-
-#### Polling
-
-#### RTOS
-
-#### Interrupts
-
-### Future
