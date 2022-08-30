@@ -1,0 +1,4 @@
+../Core/Src/Graphics/sed1335-stm32.c:33:6:GLCD_WriteData	16	static,ignoring_inline_asm
+../Core/Src/Graphics/sed1335-stm32.c:46:6:GLCD_WriteCommand	16	static,ignoring_inline_asm
+../Core/Src/Graphics/sed1335-stm32.c:61:15:GLCD_ReadData	32	static,ignoring_inline_asm
+../Core/Src/Graphics/sed1335-stm32.c:88:15:GLCD_ReadByteFromROMMemory	16	static
