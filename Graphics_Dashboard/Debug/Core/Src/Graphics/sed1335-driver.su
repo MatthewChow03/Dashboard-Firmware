@@ -1,7 +1,6 @@
 ../Core/Src/Graphics/sed1335-driver.c:11:6:GLCD_Initialize	8	static
 ../Core/Src/Graphics/sed1335-driver.c:58:6:GLCD_SetPixel	32	static
 ../Core/Src/Graphics/sed1335-driver.c:78:6:GLCD_WriteText	16	static
-../Core/Src/Graphics/sed1335-driver.c:86:6:GLCD_WriteTextP	16	static
 ../Core/Src/Graphics/sed1335-driver.c:94:6:GLCD_SetCursorAddress	16	static
 ../Core/Src/Graphics/sed1335-driver.c:101:6:GLCD_TextGoTo	16	static
 ../Core/Src/Graphics/sed1335-driver.c:106:6:GLCD_GraphicGoTo	16	static

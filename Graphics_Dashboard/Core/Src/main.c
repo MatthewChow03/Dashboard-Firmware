@@ -25,6 +25,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "Graphics/sed1335-driver.h"
+#include "Graphics/sed1335-graphic.h"
+#include "Graphics/Assets/font-lucida.h"
+#include "Graphics/Assets/bitmap-solar-logo.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -90,6 +95,8 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
+  GLCD_Initialize();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -98,6 +105,31 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+		// Toggle onboard LED to show activity
+		HAL_GPIO_TogglePin(ONBOARD_LED_GPIO_Port, ONBOARD_LED_Pin);
+
+		// Draw circle
+		GLCD_Circle(0, 0, 10);
+		GLCD_ClearText();
+		HAL_Delay(500);
+
+		// Draw UBC Solar logo
+		GLCD_Bitmap(&BITMAP_SOLAR_LOGO, 0, 0, 200, 200);
+		GLCD_ClearText();
+		HAL_Delay(500);
+
+		// Draw text from ROM
+		GLCD_TextGoTo(0,0);
+		GLCD_WriteText("Hello World");
+		GLCD_ClearText();
+		HAL_Delay(500);
+
+		// Draw text from bitmap
+		GLCD_WriteBitmapText("Hello World", 0, 0, LUCIDA_FONT);
+		GLCD_ClearText();
+		HAL_Delay(500);
+
+		HAL_Delay(1000);
 	}
   /* USER CODE END 3 */
 }

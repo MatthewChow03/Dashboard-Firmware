@@ -3,13 +3,13 @@
 //-------------------------------------------------------------------------------------------------
 #include "Graphics/sed1335-driver.h"
 
-extern void GLCD_InitializePorts(void);
+//extern void GLCD_InitializePorts(void);
 
 //-------------------------------------------------------------------------------------------------
 // Funkcja inicjalizacji wy�wietlacza
 //-------------------------------------------------------------------------------------------------
 void GLCD_Initialize(void) {
-	GLCD_InitializePorts();
+//	GLCD_InitializePorts();
 
 	GLCD_WriteCommand(SED1335_SYSTEM_SET);
 	GLCD_WriteData(SED1335_SYS_P1);
@@ -83,11 +83,11 @@ void GLCD_WriteText(char *tekst) {
 //-------------------------------------------------------------------------------------------------
 // Funkcja wy�wietlaj�ca tekst z pami�ci programu (AVR)
 //-------------------------------------------------------------------------------------------------
-void GLCD_WriteTextP(char *tekst) {
-	GLCD_WriteCommand(SED1335_MWRITE);
-	while (GLCD_ReadByteFromROMMemory(tekst))
-		GLCD_WriteData(GLCD_ReadByteFromROMMemory(tekst++));
-}
+//void GLCD_WriteText(char *tekst) {
+//	GLCD_WriteCommand(SED1335_MWRITE);
+//	while (GLCD_ReadByteFromROMMemory(tekst))
+//		GLCD_WriteData(GLCD_ReadByteFromROMMemory(tekst++));
+//}
 //-------------------------------------------------------------------------------------------------
 // Funkcja ustawiaj�ca adres kursora
 //-------------------------------------------------------------------------------------------------
@@ -161,8 +161,12 @@ void GLCD_WriteBitmapText(char * text,int x, int y, unsigned int * font)
 			//send command to write to LCD RAM
 			GLCD_WriteCommand(SED1335_MWRITE);
 			//Write Data
-			GLCD_WriteData(pgm_read_word_near(fontPointer)); //lowbyte or first 8 pixels of this row
-			GLCD_WriteData(pgm_read_word_near(fontPointer) >> 8); //highbyte or last 8 pixels
+//			GLCD_WriteData(pgm_read_word_near(fontPointer)); //lowbyte or first 8 pixels of this row
+//			GLCD_WriteData(pgm_read_word_near(fontPointer) >> 8); //highbyte or last 8 pixels
+
+			GLCD_WriteData((unsigned char)(fontPointer)); //lowbyte or first 8 pixels of this row
+			GLCD_WriteData((unsigned char)(fontPointer) >> 8); //highbyte or last 8 pixels
+
 			fontPointer++;
 		}
 		text++;

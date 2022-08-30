@@ -1,9 +1,12 @@
 #ifndef LUCIDA_FONT_DEF
 #define LUCIDA_FONT_DEF
 
-#include <avr/pgmspace.h>
+//#include <avr/pgmspace.h>
 
-unsigned int LUCIDA_FONT[] PROGMEM = {
+// TODO: PROGMEM keyword was previously used to tell compiler to store data in flash not RAM
+// need to implement something similar or the storage will max out
+
+unsigned int LUCIDA_FONT[] = {
 	// @0 ' ' (14 pixels wide)
 	0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 
